@@ -19,27 +19,28 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-import gedit
+from gi.repository import Gedit
+from gi.repository import GObject
 
 import os
-import sys
-import gtk
-import gtkhtml2
+import io
+from gi.repository import Gtk
+from gi.repository import WebKit
 
 from gettext import gettext as _
 from makeTable import toRSTtable
 ## pygments support
-import RegisterPygment
+#import RegisterPygment
 ## docutils
 from docutils.core import publish_parts
 
-
 ## I'm not satisfied with that
 restpluginDir = os.path.dirname(os.path.abspath(__file__))
-css = os.path.join(restpluginDir,'restmain.css')
-styles = open(css,'r')
+css = os.path.join(restpluginDir, 'restmain.css')
+styles = open(css, 'r')
 
-START_HTML = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+START_HTML = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="Content-Language" content="English" />
@@ -48,7 +49,7 @@ START_HTML = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3
         %s
     </style>
 </head>
-<body>"""% (styles.read())
+<body>""" % (styles.read())
 
 styles.close()
 
@@ -85,55 +86,54 @@ ui_str = """<ui>
 </ui>
 """
 
-class restPlugin(gedit.Plugin):
+
+class restPlugin(GObject.Object, Gedit.WindowActivatable):
+
+    window = GObject.property(type=Gedit.Window)
 
     def __init__(self):
-        gedit.Plugin.__init__(self)
+        GObject.Object.__init__(self)
 
-    def activate(self, window):
+    def do_activate(self):
         ## TODO : Maybe have to check the filetype ?
-
-        self._window = window
 
         # Store data in the window object
         windowdata = dict()
-        window.set_data("reStPreviewData", windowdata)
+        self.window.reStPreviewData = windowdata
 
-        scrolled_window = gtk.ScrolledWindow()
-        scrolled_window.set_property("hscrollbar-policy",gtk.POLICY_AUTOMATIC)
-        scrolled_window.set_property("vscrollbar-policy",gtk.POLICY_AUTOMATIC)
-        scrolled_window.set_property("shadow-type",gtk.SHADOW_IN)
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_property("hscrollbar-policy",
+                                     Gtk.PolicyType.AUTOMATIC)
+        scrolled_window.set_property("vscrollbar-policy",
+                                     Gtk.PolicyType.AUTOMATIC)
+        scrolled_window.set_property("shadow-type",
+                                     Gtk.ShadowType.IN)
 
-        html_view = gtkhtml2.View()
-        html_doc = gtkhtml2.Document()
-        html_view.set_document(html_doc)
+        html_view = WebKit.WebView()
+        html_view.load_string("%s\n<p>reStructuredText viewer</p>\n%s" %
+                              (START_HTML, END_HTML), 'text/html',
+                              'utf8', '')
 
-        html_doc.clear()
-        html_doc.open_stream("text/html")
-        html_doc.write_stream(START_HTML)
-        html_doc.write_stream("<p>reStructuredText viewer</p>")
-        html_doc.write_stream(END_HTML)
-        html_doc.close_stream()
-
-        scrolled_window.set_hadjustment(html_view.get_hadjustment())
-        scrolled_window.set_vadjustment(html_view.get_vadjustment())
+        #scrolled_window.set_hadjustment(html_view.get_hadjustment())
+        #scrolled_window.set_vadjustment(html_view.get_vadjustment())
         scrolled_window.add(html_view)
         scrolled_window.show_all()
 
-        bottom = window.get_bottom_panel()
-        image = gtk.Image()
-        image.set_from_icon_name("gnome-mime-text-html", gtk.ICON_SIZE_MENU)
-        bottom.add_item(scrolled_window, "reSt Preview", image)
+        bottom = self.window.get_bottom_panel()
+        image = Gtk.Image()
+        image.set_from_icon_name("gnome-mime-text-html", Gtk.IconSize.MENU)
+        bottom.add_item(scrolled_window, "rest-preview", "reSt Preview", image)
         windowdata["bottom_panel"] = scrolled_window
-        windowdata["html_doc"] = html_doc
+        windowdata["html_doc"] = html_view
 
-        manager = window.get_ui_manager()
+        manager = self.window.get_ui_manager()
 
         ## Added later
-        separator = gtk.SeparatorMenuItem()
-        self._action_group = gtk.ActionGroup("reStPluginActions")
+        #separator = Gtk.SeparatorMenuItem()
+        self._action_group = Gtk.ActionGroup("reStPluginActions")
         self._action_group.add_actions([("preview", None, _("reSt preview"),
-                                         "<Control><Shift>R", _("reSt preview"),
+                                         "<Control><Shift>R",
+                                         _("reSt preview"),
                                          self.on_update_preview),
                                         ("table", None, _("Create Table"),
                                          None, _("Create a reSt table"),
@@ -147,10 +147,11 @@ class restPlugin(gedit.Plugin):
                                         ("--> LaTeX", None, _("--> LaTeX"),
                                          None, _("transform to LaTeX"),
                                          self.on_latex),
-                                        ("--> OpenOffice", None, _("--> OpenOffice"),
+                                        ("--> OpenOffice", None,
+                                         _("--> OpenOffice"),
                                          None, _("transform to OpenOffice"),
                                          self.on_openoffice),
-                                       ])
+                                        ])
 
         # Insert the action group
         manager.insert_action_group(self._action_group, -1)
@@ -158,23 +159,22 @@ class restPlugin(gedit.Plugin):
         # Merge the UI
         self._ui_id = manager.add_ui_from_string(ui_str)
 
-    def deactivate(self, window):
+    def do_deactivate(self):
         # Retreive the data of the window object
-        windowdata = window.get_data("reStPreviewData")
+        windowdata = self.window.reStPreviewData
 
         # Remove the menu action
-        manager = window.get_ui_manager()
-        manager.remove_action_ui(windowdata["ui_id"])
-        manager.remove_action_group(windowdata["action_group"])
+        if 'ui_id' in windowdata:
+            manager = self.window.get_ui_manager()
+            manager.remove_ui(windowdata["ui_id"])
+            manager.remove_action_group(windowdata["action_group"])
 
         # Remove the bottom panel
-        bottom = window.get_bottom_panel()
+        bottom = self.window.get_bottom_panel()
         bottom.remove_item(windowdata["bottom_panel"])
 
-    def getSelection(self, window):
-        windowdata = window.get_data("reStPreviewData")
-
-        view = window.get_active_view()
+    def getSelection(self):
+        view = self.window.get_active_view()
         if not view:
             return
 
@@ -187,16 +187,16 @@ class restPlugin(gedit.Plugin):
             start = doc.get_iter_at_mark(doc.get_insert())
             end = doc.get_iter_at_mark(doc.get_selection_bound())
 
-        text = doc.get_text(start, end)
+        text = doc.get_text(start, end)  # noqa
 
     # Menu activate handlers
     def on_update_preview(self, window):
         # Retreive the data of the window object
-        windowdata = self._window.get_data("reStPreviewData")
+        windowdata = self.window.reStPreviewData
 
-        view = self._window.get_active_view()
+        view = self.window.get_active_view()
         if not view:
-             return
+            return
 
         doc = view.get_buffer()
 
@@ -207,63 +207,66 @@ class restPlugin(gedit.Plugin):
             start = doc.get_iter_at_mark(doc.get_insert())
             end = doc.get_iter_at_mark(doc.get_selection_bound())
 
-        text = doc.get_text(start, end)
+        text = doc.get_text(start, end, False)
         html = publish_parts(text, writer_name="html")["html_body"]
 
         ## Sortie
-        sortie = '\n'.join([START_HTML,html,END_HTML])
-        fs = open('sortie.html','w')
+        sortie = '\n'.join([START_HTML, html, END_HTML])
+        fs = io.open('sortie.html', 'w', encoding='utf8')
         fs.write(sortie)
         fs.close()
 
         p = windowdata["bottom_panel"].get_placement()
 
         html_doc = windowdata["html_doc"]
-        html_doc.clear()
-        html_doc.open_stream("text/html")
-        html_doc.write_stream(START_HTML)
-        html_doc.write_stream(html)
-        html_doc.write_stream(END_HTML)
-        html_doc.close_stream()
+        html_doc.load_string("%s\n%s\n%s" %
+                             (START_HTML, html, END_HTML),
+                             'text/html', 'utf8', '')
 
         windowdata["bottom_panel"].set_placement(p)
 
-    def on_latex(self,action):
-        doc = self._window.get_active_document()
+    def on_latex(self, action):
+        doc = self.window.get_active_document()
         filename = doc.get_uri_for_display()[:-4]
         pd = restpluginDir
-        os.popen2('python %s/to_tex.py "%s.rst" "%s.tex"'%(pd,filename,filename))
+        os.popen2('python %s/to_tex.py "%s.rst" "%s.tex"' %
+                  (pd, filename, filename))
 
-    def on_html(self,action):
-        doc = self._window.get_active_document()
+    def on_html(self, action):
+        doc = self.window.get_active_document()
         filename = doc.get_uri_for_display()[:-4]
         pd = restpluginDir
-        os.popen2('python %s/to_html.py --stylesheet=%s/restmain.css --language=fr "%s.rst" "%s.html"'%(pd,pd,filename,filename))
+        os.popen2('python %s/to_html.py --stylesheet=%s/restmain.css '
+                  '"%s.rst" "%s.html"' %
+                  (pd, pd, filename, filename))
 
-    def on_openoffice(self,action):
-        doc = self._window.get_active_document()
+    def on_openoffice(self, action):
+        doc = self.window.get_active_document()
         filename = doc.get_uri_for_display()[:-4]
         pd = restpluginDir
-        os.popen2('python %s/to_odt.py --add-syntax-highlighting --stylesheet=%s/default.odt "%s.rst" "%s.odt"'%(pd,pd,filename,filename))
+        os.popen2('python %s/to_odt.py --add-syntax-highlighting '
+                  '--stylesheet=%s/default.odt "%s.rst" "%s.odt"' %
+                  (pd, pd, filename, filename))
 
     def on_paste_code(self, action):
-        doc = self._window.get_active_document()
+        doc = self.window.get_active_document()
 
         if not doc:
             return
 
-        lines = gtk.clipboard_get().wait_for_text().split('\n')
+        lines = Gtk.clipboard_get().wait_for_text().split('\n')
         to_copy = "\n".join([line for line in lines[1:]])
-        doc.insert_at_cursor('..sourcecode:: ChoosenLanguage\n\n    %s\n'%lines[0])
+        doc.insert_at_cursor('..sourcecode:: ChoosenLanguage\n\n    %s\n' %
+                             lines[0])
         doc.insert_at_cursor(to_copy + '\n\n')
 
-    def on_create_table(self,action):
-        view = self._window.get_active_view()
+    def on_create_table(self, action):
+        view = self.window.get_active_view()
 
         if not view:
             return
 
-        indent = view.get_indent()
+        indent = view.get_indent()  # noqa
 
         doc = view.get_buffer()
         #print 'language=',doc.get_language()
@@ -276,10 +279,10 @@ class restPlugin(gedit.Plugin):
             end = doc.get_iter_at_mark(doc.get_selection_bound())
 
         text = doc.get_text(start, end)
-        doc.delete(start,end)
+        doc.delete(start, end)
 
         lines = text.split("\n")
         labels = lines[0].split(',')
-        rows = [row.strip().split(',')  for row in lines[1:]]
+        rows = [row.strip().split(',') for row in lines[1:]]
 
-        doc.insert_at_cursor(toRSTtable([labels]+rows))
+        doc.insert_at_cursor(toRSTtable([labels] + rows))

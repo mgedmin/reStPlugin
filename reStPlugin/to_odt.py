@@ -15,10 +15,10 @@ try:
 except:
     pass
 
-from docutils.core import publish_cmdline, default_description, \
+from docutils.core import default_description, \
     Publisher, default_usage
 from docutils import io
-from docutils.writers.odtwriter import Writer
+from docutils.writers.odf_odt import Writer
 
 
 description = ('Generates Docutils-native XML from standalone '

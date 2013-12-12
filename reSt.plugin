@@ -1,7 +1,7 @@
-[Gedit Plugin]
+[Plugin]
 Loader=python
 Module=reStPlugin
-IAge=2
+IAge=3
 Name=reStructuredText plugin
 Description=A reStructuredText plugin
 Authors=Christophe Kibleur <kib2@free.fr>
