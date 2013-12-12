@@ -16,7 +16,7 @@ Dépendancies
 
 - `Python <http://www.python.org/>`_ : version >= 2.5;
 - `Pygments <http://pygments.org/>`_ : take the latest version;
-- `reStructuredText <http://docutils.sourceforge.net/>`_ ;
+- `docutils <http://docutils.sourceforge.net/>`_ ;
 - `odtwriter <http://www.rexx.com/~dkuhlman/odtwriter.html>`_ : a reStructuredText addon to export in OpenOffice format.
 
 Installation
