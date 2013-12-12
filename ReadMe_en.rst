@@ -42,7 +42,7 @@ You should then obtain something like this : ::
 Using
 -----
 
-Activate the plugin via Edit/Préférences/Plugins and turn the
+Activate the plugin via Edit/Preferences/Plugins and turn the
 ``reStructuredText plugin`` box on.
 
 The plugin is now activated, and you should have a new panel inside the 
@@ -54,26 +54,26 @@ Shortcuts
 There's only one shortcut for the moment, maybe I'll create some others in the
 future.
 
-``Ctrl+Maj+R`` : is used to refresh the generated HTML view inside 
+``Ctrl+Shift+R`` is used to refresh the generated HTML view inside the
 ``reSt Preview`` pane. If there's some selected text, the conversion process
 will only apply on it. If there's no selection, the entire document is 
-processed. It may be usefull for testing.
+processed. It may be useful for testing.
 
 Menu
 ####
 
-The ``Tools`` menu is populated with several options :
+The ``Tools`` menu is populated with several options:
 
 - ``reSt Preview`` is the same as the above;
-- ``Create table`` is usefull for creating simple reStructuredText tables.
+- ``Create table`` is useful for creating simple reStructuredText tables.
 
-Example : Enter the two folling lines in gedit, select them and activate 
-``Create table`` : ::
+Example : Enter the two following lines in gedit, select them and activate 
+``Create table`` ::
 
     one,two,tree
     First,Second,Third
 
-The output will be :
+The output will be
 
 =========  ==========  =========
    one        two         tree  
@@ -81,9 +81,9 @@ The output will be :
   First      Second      Third  
 =========  ==========  =========
 
-- ``Paste Code`` maybe usefull to paste some parts of code using 
+- ``Paste Code`` may be useful to paste some parts of code using 
   `Pygments <http://pygments.org/>`_'s ``sourcecode`` directive.
-  Just invoque ``Paste Code`` with something in your clipboard and
+  Just invoke ``Paste Code`` with something in your clipboard and
   you're done. You'll have to adjust the language afterwards.
 
 - ``--> HTML``, ``--> LaTeX``, ``--> OpenOffice``: are convenient ways to
@@ -91,7 +91,7 @@ The output will be :
   stylesheets. You're free to modify them, even to propose your own because
   I'm not a CSS ace :)
 
-Hoping it helps you, to contact me, drop me a message here : kib2 at free.fr
+Hoping it helps you, to contact me, drop me a message here: kib2 at free.fr
 
 See you,
 
